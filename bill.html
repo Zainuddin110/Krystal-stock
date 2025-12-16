@@ -15,52 +15,47 @@
         
         .container { max-width: 900px; margin: 0 auto; }
         
-        /* Header */
         .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
         .header img { height: 50px; }
         .header h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
 
-        /* Card */
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        
-        /* Form Sections */
         .section-title { font-weight: bold; color: #555; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 15px; margin-top: 0; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
 
         label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #4b5563; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
         
-        /* Items Table */
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .items-table th { text-align: left; background: #f9fafb; padding: 10px; font-size: 0.85rem; color: #6b7280; }
         .items-table td { padding: 8px; border-bottom: 1px solid #eee; }
         .items-table input { border: 1px solid #e5e7eb; padding: 8px; }
         
-        /* Buttons */
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.95rem; }
         .btn-add { background: #e0e7ff; color: #3730a3; width: 100%; margin-bottom: 20px; }
         .btn-generate { background: var(--primary); color: white; width: 100%; font-size: 1.1rem; padding: 15px; }
         .btn-remove { background: #fee2e2; color: #991b1b; padding: 5px 10px; font-size: 0.8rem; }
         .btn-download { background: #059669; color: white; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; }
         
-        /* Total Section */
         .total-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-        .total-box { background: #f9fafb; padding: 15px; border-radius: 8px; width: 280px; }
+        .total-box { background: #f9fafb; padding: 15px; border-radius: 8px; width: 300px; }
         .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
         .final-total { font-weight: bold; font-size: 1.3rem; color: var(--primary); border-top: 2px solid #e5e7eb; padding-top: 10px; margin-top: 5px; }
-
-        /* History Table */
+        
         .history-table { width: 100%; border-collapse: collapse; }
         .history-table th, .history-table td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
         .history-table th { background: #f3f4f6; }
 
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        .checkbox-wrapper input { width: auto; }
+
         @media (max-width: 600px) {
-            .grid-2 { grid-template-columns: 1fr; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
             .items-table th, .items-table td { display: block; width: 100%; box-sizing: border-box; }
             .items-table tr { border-bottom: 2px solid #ddd; display: block; margin-bottom: 10px; }
             .total-box { width: 100%; }
-            .history-table { display: block; overflow-x: auto; }
         }
     </style>
 </head>
@@ -69,29 +64,55 @@
 <div class="container">
     <div class="header">
         <img src="logo.png" id="invoiceLogo" alt="Logo">
-        <h1>Krystal Billing</h1>
+        <h1>Billing System</h1>
     </div>
 
     <div class="card">
-        <h3 class="section-title">New Invoice</h3>
-        <div class="grid-2">
+        <h3 class="section-title">Invoice Info</h3>
+        <div class="grid-3">
             <div>
                 <label>Invoice Number</label>
-                <input type="text" id="invNumber" placeholder="INV-001">
+                <input type="text" id="invNumber" placeholder="1175">
             </div>
             <div>
                 <label>Date</label>
                 <input type="date" id="invDate">
             </div>
-        </div>
-        <div class="grid-2">
             <div>
-                <label>Client Name</label>
-                <input type="text" id="clientName" placeholder="e.g. Rahul Sharma">
+                <label>Kind Attn</label>
+                <input type="text" id="kindAttn" placeholder="e.g. Rakesh">
+            </div>
+        </div>
+        <div class="grid-3">
+            <div>
+                <label>P.O. No.</label>
+                <input type="text" id="poNumber" placeholder="e.g. by mail">
             </div>
             <div>
-                <label>Client GSTIN / Contact</label>
-                <input type="text" id="clientContact" placeholder="e.g. 27ABCDE1234F1Z5">
+                <label>Job Sheet No.</label>
+                <input type="text" id="jobSheetNo">
+            </div>
+            <div>
+                <label>From (Sender)</label>
+                <input type="text" id="senderName" value="Aliasger Fatakdawala">
+            </div>
+        </div>
+
+        <h3 class="section-title">Client Details</h3>
+        <div class="grid-2">
+            <div>
+                <label>Client Name (Auto-Fill)</label>
+                <input type="text" id="clientName" list="savedClients" onchange="autoFillClient()" placeholder="Start typing name...">
+                <datalist id="savedClients">
+                    </datalist>
+            </div>
+            <div>
+                <label>Client GSTIN</label>
+                <input type="text" id="clientGst" placeholder="e.g. 24AWNPS5939B1Z9">
+            </div>
+            <div style="grid-column: span 2;">
+                <label>Client Address</label>
+                <textarea id="clientAddress" rows="2" placeholder="Full Address..."></textarea>
             </div>
         </div>
 
@@ -99,11 +120,12 @@
         <table class="items-table">
             <thead>
                 <tr>
+                    <th style="width: 5%;">Sr.</th>
                     <th style="width: 35%;">Description</th>
                     <th style="width: 15%;">HSN</th>
                     <th style="width: 15%;">Qty</th>
                     <th style="width: 15%;">Rate (₹)</th>
-                    <th style="width: 20%;">Amount</th>
+                    <th style="width: 15%;">Amount</th>
                     <th></th>
                 </tr>
             </thead>
@@ -118,16 +140,24 @@
                     <span>Subtotal:</span>
                     <span>₹ <span id="subTotal">0.00</span></span>
                 </div>
-                <div class="total-row" style="align-items: center;">
-                    <span>GST Rate:</span>
-                    <select id="taxRate" style="width: 80px; padding: 4px;" onchange="calcTotals()">
-                        <option value="0">0%</option>
-                        <option value="5">5%</option>
-                        <option value="12">12%</option>
-                        <option value="18" selected>18%</option>
-                        <option value="28">28%</option>
-                    </select>
+                
+                <div style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                    <div class="total-row" style="align-items: center;">
+                        <span>Tax Rate:</span>
+                        <select id="taxRate" style="width: 80px; padding: 4px;" onchange="calcTotals()">
+                            <option value="0">0%</option>
+                            <option value="5">5%</option>
+                            <option value="12">12%</option>
+                            <option value="18" selected>18%</option>
+                            <option value="28">28%</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="isIGST" onchange="calcTotals()">
+                        <label for="isIGST" style="font-weight: normal; margin:0;">Inter-state (IGST)</label>
+                    </div>
                 </div>
+
                 <div class="total-row">
                     <span>Total Tax:</span>
                     <span style="color: #dc2626;">+ ₹ <span id="taxAmount">0.00</span></span>
@@ -151,19 +181,18 @@
                     <th>Date</th>
                     <th>Invoice #</th>
                     <th>Client</th>
-                    <th>Amount</th>
+                    <th>Total</th>
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="historyBody">
-                </tbody>
+            <tbody id="historyBody"></tbody>
         </table>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
@@ -177,18 +206,47 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const invCol = collection(db, "invoices");
+    const clientCol = collection(db, "clients"); // NEW CLIENT DB
 
-    // Initialize Date & Random Invoice Number
     document.getElementById('invDate').valueAsDate = new Date();
-    document.getElementById('invNumber').value = "INV-" + Math.floor(1000 + Math.random() * 9000);
 
-    // --- 1. UI LOGIC (ROWS & CALCS) ---
+    // --- 1. CLIENT AUTO-FILL LOGIC ---
+    let clientMap = {}; // Local storage for loaded clients
+
+    // Load all clients on startup
+    onSnapshot(collection(db, "clients"), (snapshot) => {
+        const datalist = document.getElementById('savedClients');
+        datalist.innerHTML = ""; // Clear existing
+        clientMap = {}; 
+
+        snapshot.forEach(doc => {
+            const c = doc.data();
+            clientMap[c.name] = c; // Map name to details
+            const option = document.createElement('option');
+            option.value = c.name;
+            datalist.appendChild(option);
+        });
+    });
+
+    // Function to fill details when name is selected
+    window.autoFillClient = function() {
+        const name = document.getElementById('clientName').value;
+        if(clientMap[name]) {
+            document.getElementById('clientGst').value = clientMap[name].gst || "";
+            document.getElementById('clientAddress').value = clientMap[name].address || "";
+        }
+    }
+
+    // --- 2. UI LOGIC ---
+    let rowCount = 0;
     window.addItemRow = function() {
+        rowCount++;
         const tbody = document.getElementById('itemsBody');
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td><input type="text" value="${rowCount}" class="sr" style="text-align:center;"></td>
             <td><input type="text" placeholder="Item Name" class="desc"></td>
-            <td><input type="text" value="9988" class="hsn"></td>
+            <td><input type="text" value="7018" class="hsn"></td>
             <td><input type="number" value="1" class="qty" oninput="window.calcRow(this)"></td>
             <td><input type="number" value="0" class="rate" oninput="window.calcRow(this)"></td>
             <td><input type="text" value="0.00" class="amount" readonly></td>
@@ -222,14 +280,21 @@
         document.getElementById('grandTotal').innerText = (sub + tax).toFixed(2);
     }
 
-    window.addItemRow(); // Start with 1 row
+    window.addItemRow(); 
 
-    // --- 2. SAVE & GENERATE LOGIC ---
+    // --- 3. SAVE & GENERATE ---
     document.getElementById('saveBtn').addEventListener('click', async () => {
-        // Gather Data
+        const clientName = document.getElementById('clientName').value;
+        const clientGst = document.getElementById('clientGst').value;
+        const clientAddress = document.getElementById('clientAddress').value;
+
+        if(!clientName) { alert("Please enter Client Name"); return; }
+
+        // Gather Invoice Data
         const items = [];
         document.querySelectorAll('#itemsBody tr').forEach(row => {
             items.push({
+                sr: row.querySelector('.sr').value,
                 desc: row.querySelector('.desc').value,
                 hsn: row.querySelector('.hsn').value,
                 qty: row.querySelector('.qty').value,
@@ -241,111 +306,202 @@
         const invoiceData = {
             invNo: document.getElementById('invNumber').value,
             date: document.getElementById('invDate').value,
-            client: document.getElementById('clientName').value,
-            contact: document.getElementById('clientContact').value,
+            kindAttn: document.getElementById('kindAttn').value,
+            poNo: document.getElementById('poNumber').value,
+            jobSheet: document.getElementById('jobSheetNo').value,
+            sender: document.getElementById('senderName').value,
+            client: clientName,
+            clientGst: clientGst,
+            clientAddr: clientAddress,
             subTotal: document.getElementById('subTotal').innerText,
             taxRate: document.getElementById('taxRate').value,
+            isIGST: document.getElementById('isIGST').checked,
             taxAmount: document.getElementById('taxAmount').innerText,
             grandTotal: document.getElementById('grandTotal').innerText,
             items: items,
             timestamp: Timestamp.now()
         };
 
-        if(!invoiceData.client) { alert("Please enter Client Name"); return; }
-
         try {
-            // Save to Firebase
+            // 1. Save Invoice
             await addDoc(invCol, invoiceData);
+
+            // 2. Save/Update Client for Future
+            await setDoc(doc(db, "clients", clientName), {
+                name: clientName,
+                gst: clientGst,
+                address: clientAddress
+            });
             
-            // Generate PDF
+            // 3. Generate PDF
             window.generatePDF(invoiceData);
             
-            // Reset Form
             alert("Invoice Saved & Downloaded!");
-            location.reload(); 
         } catch (error) {
             console.error(error);
             alert("Error saving invoice");
         }
     });
 
-    // --- 3. PDF GENERATOR (Reusable) ---
+    // --- 4. EXACT FORMAT PDF GENERATOR ---
     window.generatePDF = function(data) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const img = document.getElementById('invoiceLogo');
 
-        // Logo
+        // Logo & Header
         if(img.naturalWidth > 0) {
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 14, 10, 30, 20);
         }
 
-        // Header
-        doc.setFontSize(22); doc.setTextColor(185, 28, 28);
-        doc.text("TAX INVOICE", 195, 20, { align: 'right' });
-        
-        doc.setFontSize(10); doc.setTextColor(0, 0, 0);
-        doc.text("Krystal Gifts", 195, 28, { align: 'right' });
-        doc.text("Mumbai, Maharashtra", 195, 33, { align: 'right' });
-        doc.text("GSTIN: 27ABCDE1234F1Z5", 195, 38, { align: 'right' });
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(26);
+        doc.setTextColor(185, 28, 28);
+        doc.text("KRYSTAL", 105, 15, { align: 'center' }); 
 
-        // Bill To
-        doc.setFontSize(12); doc.text("Bill To:", 14, 45);
-        doc.setFontSize(11); doc.setFont("helvetica", "bold");
-        doc.text(data.client, 14, 52);
+        doc.setFontSize(10);
+        doc.setTextColor(0,0,0);
+        doc.text("TROPHIES, MEMENTOES & GIFTS", 105, 21, { align: 'center' });
+
         doc.setFont("helvetica", "normal");
-        doc.text(data.contact, 14, 57);
+        doc.setFontSize(9);
+        doc.text("44/B, Mumbai Timber Market, Signal Hill Avenue, ReayRoad (E), Mumbai: 400010", 105, 27, { align: 'center' });
 
-        // Details
-        doc.text(`Invoice #: ${data.invNo}`, 195, 52, { align: 'right' });
-        doc.text(`Date: ${data.date}`, 195, 57, { align: 'right' });
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("TAX INVOICE", 105, 36, { align: 'center' });
+        doc.line(10, 38, 200, 38); 
 
-        // Table Body
-        const tableBody = data.items.map(i => [i.desc, i.hsn, i.qty, i.rate, i.amount]);
+        // LEFT SIDE: CLIENT
+        let y = 45;
+        doc.setFontSize(10);
+        doc.text("TO", 14, y); y += 5;
+        doc.setFontSize(11);
+        doc.text(data.client, 14, y); y += 5;
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const addrLines = doc.splitTextToSize(data.clientAddr, 90);
+        doc.text(addrLines, 14, y);
+        y += (addrLines.length * 5) + 2;
+        
+        doc.setFont("helvetica", "bold");
+        doc.text(`Party's GSTIN: ${data.clientGst}`, 14, y);
 
-        doc.autoTable({
-            startY: 65,
-            head: [['Description', 'HSN', 'Qty', 'Rate', 'Amount']],
-            body: tableBody,
-            theme: 'grid',
-            headStyles: { fillColor: [185, 28, 28] },
-            columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
-        });
-
-        // Footer Totals
-        let finalY = doc.lastAutoTable.finalY + 10;
+        // RIGHT SIDE: META
+        const rightX = 120;
+        let rightY = 45;
         
         doc.setFontSize(10);
-        doc.text(`Subtotal:`, 140, finalY);
-        doc.text(`${data.subTotal}`, 195, finalY, { align: 'right' });
+        doc.text(`INVOICE NO:  ${data.invNo}`, rightX, rightY); rightY += 5;
+        doc.text(`Date:  ${formatDate(data.date)}`, rightX, rightY); rightY += 7;
+        
+        doc.text(`Kind Attn:  ${data.kindAttn}`, rightX, rightY); rightY += 5;
+        doc.text(`P.O No.:  ${data.poNo}`, rightX, rightY); rightY += 5;
+        doc.text(`From:  ${data.sender}`, rightX, rightY); rightY += 5;
+        doc.text(`Job Sheet No.:  ${data.jobSheet}`, rightX, rightY);
 
-        const halfTax = (parseFloat(data.taxAmount) / 2).toFixed(2);
-        const halfRate = parseFloat(data.taxRate) / 2;
+        // TABLE
+        const tableBody = data.items.map(i => [i.sr, i.desc, i.qty, "pcs", i.rate, i.amount]); 
 
-        finalY += 6;
-        doc.text(`CGST (${halfRate}%):`, 140, finalY);
-        doc.text(`${halfTax}`, 195, finalY, { align: 'right' });
+        doc.autoTable({
+            startY: 85,
+            head: [['Sr. No.', 'Description', 'Qty', 'Unit', 'Rate', 'Amount']],
+            body: tableBody,
+            theme: 'plain',
+            styles: { fontSize: 9, cellPadding: 2, lineColor: 10, lineWidth: 0.1 },
+            headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold', halign: 'center' },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 15 },
+                1: { cellWidth: 80 },
+                2: { halign: 'center' },
+                3: { halign: 'center' },
+                4: { halign: 'right' },
+                5: { halign: 'right' }
+            }
+        });
 
-        finalY += 6;
-        doc.text(`SGST (${halfRate}%):`, 140, finalY);
-        doc.text(`${halfTax}`, 195, finalY, { align: 'right' });
+        let finalY = doc.lastAutoTable.finalY + 5;
 
-        finalY += 10;
-        doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(185, 28, 28);
-        doc.text(`Total: ${data.grandTotal}`, 195, finalY, { align: 'right' });
+        // FOOTER BANK DETAILS
+        const bankY = finalY + 5;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("BANK DETAILS", 14, bankY);
+        doc.setFont("helvetica", "normal");
+        doc.text("ICICI BANK", 14, bankY + 4);
+        doc.text("BRANCH: MAZGOAN", 14, bankY + 8);
+        doc.text("ACCOUNT NAME: KRYSTAL", 14, bankY + 12);
+        doc.text("ACCOUNT NO: 107105000799", 14, bankY + 16);
+        doc.text("RTGS/NEFT IFSC: ICIC0001071", 14, bankY + 20);
+        doc.text("PAN NO: AAPFK1253N", 14, bankY + 24);
+        doc.text("GSTIN: 27AAPFK1253N1ZV", 14, bankY + 28);
+        doc.text("HSN CODE: 7018", 14, bankY + 32);
 
-        doc.save(`${data.client}_Invoice.pdf`);
+        // TOTALS
+        let totalY = finalY + 5;
+        const totalX = 140;
+        const valX = 195;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Total", totalX, totalY);
+        doc.text(data.subTotal, valX, totalY, {align:'right'});
+        
+        totalY += 6;
+        doc.setFont("helvetica", "normal");
+        
+        if(data.isIGST) {
+            doc.text(`IGST @${data.taxRate}%`, totalX, totalY);
+            doc.text(data.taxAmount, valX, totalY, {align:'right'});
+        } else {
+            const halfRate = (data.taxRate / 2);
+            const halfTax = (data.taxAmount / 2).toFixed(2);
+            
+            doc.text(`CGST ${halfRate}%`, totalX, totalY);
+            doc.text(halfTax, valX, totalY, {align:'right'});
+            totalY += 5;
+            doc.text(`SGST ${halfRate}%`, totalX, totalY);
+            doc.text(halfTax, valX, totalY, {align:'right'});
+        }
+
+        totalY += 8;
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("G. Total", totalX, totalY);
+        doc.text(data.grandTotal, valX, totalY, {align:'right'});
+
+        // SIG
+        const sigY = bankY + 45;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        
+        doc.text("Declaration", 14, sigY);
+        doc.text("We declare that this invoice shows the actual price of the", 14, sigY + 4);
+        doc.text("goods described and that all particulars are true and correct.", 14, sigY + 8);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text("KRYSTAL", 160, sigY, {align:'center'});
+        doc.setFont("helvetica", "normal");
+        doc.text("Authorised Signatory", 160, sigY + 15, {align:'center'});
+
+        doc.text("SUBJECT TO MUMBAI JURISDICTION", 105, sigY + 25, {align:'center'});
+
+        doc.save(`${data.invNo} ${data.client}.pdf`);
     }
 
-    // --- 4. HISTORY LOADER ---
+    function formatDate(dateStr) {
+        if(!dateStr) return "";
+        const [y, m, d] = dateStr.split('-');
+        return `${d}.${m}.${y}`;
+    }
+
+    // --- 5. HISTORY ---
     let allInvoices = [];
     const q = query(invCol, orderBy("timestamp", "desc"));
-    
     onSnapshot(q, (snapshot) => {
         allInvoices = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         renderHistory(allInvoices);
@@ -363,13 +519,11 @@
                 <td>₹${inv.grandTotal}</td>
                 <td><button class="btn-download">Download PDF</button></td>
             `;
-            // Attach Click Event for Re-download
             row.querySelector('.btn-download').addEventListener('click', () => window.generatePDF(inv));
             tbody.appendChild(row);
         });
     }
 
-    // Search History
     document.getElementById('searchHistory').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allInvoices.filter(i => i.client.toLowerCase().includes(term));
