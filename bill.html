@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krystal Billing System</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #b91c1c; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        /* Header */
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .header img { height: 50px; }
+        .header h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
+
+        /* Card */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        
+        /* Form Sections */
+        .section-title { font-weight: bold; color: #555; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 15px; margin-top: 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #4b5563; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* Items Table */
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .items-table th { text-align: left; background: #f9fafb; padding: 10px; font-size: 0.85rem; color: #6b7280; }
+        .items-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .items-table input { border: 1px solid #e5e7eb; padding: 8px; }
+        
+        /* Buttons */
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.95rem; }
+        .btn-add { background: #e0e7ff; color: #3730a3; width: 100%; margin-bottom: 20px; }
+        .btn-generate { background: var(--primary); color: white; width: 100%; font-size: 1.1rem; padding: 15px; }
+        .btn-remove { background: #fee2e2; color: #991b1b; padding: 5px 10px; font-size: 0.8rem; }
+        .btn-download { background: #059669; color: white; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; }
+        
+        /* Total Section */
+        .total-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+        .total-box { background: #f9fafb; padding: 15px; border-radius: 8px; width: 280px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
+        .final-total { font-weight: bold; font-size: 1.3rem; color: var(--primary); border-top: 2px solid #e5e7eb; padding-top: 10px; margin-top: 5px; }
+
+        /* History Table */
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th, .history-table td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .history-table th { background: #f3f4f6; }
+
+        @media (max-width: 600px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .items-table th, .items-table td { display: block; width: 100%; box-sizing: border-box; }
+            .items-table tr { border-bottom: 2px solid #ddd; display: block; margin-bottom: 10px; }
+            .total-box { width: 100%; }
+            .history-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <img src="logo.png" id="invoiceLogo" alt="Logo">
+        <h1>Krystal Billing</h1>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">New Invoice</h3>
+        <div class="grid-2">
+            <div>
+                <label>Invoice Number</label>
+                <input type="text" id="invNumber" placeholder="INV-001">
+            </div>
+            <div>
+                <label>Date</label>
+                <input type="date" id="invDate">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div>
+                <label>Client Name</label>
+                <input type="text" id="clientName" placeholder="e.g. Rahul Sharma">
+            </div>
+            <div>
+                <label>Client GSTIN / Contact</label>
+                <input type="text" id="clientContact" placeholder="e.g. 27ABCDE1234F1Z5">
+            </div>
+        </div>
+
+        <h3 class="section-title">Items</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Description</th>
+                    <th style="width: 15%;">HSN</th>
+                    <th style="width: 15%;">Qty</th>
+                    <th style="width: 15%;">Rate (₹)</th>
+                    <th style="width: 20%;">Amount</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+        </table>
+        
+        <button class="btn btn-add" onclick="addItemRow()">+ Add Item</button>
+
+        <div class="total-section">
+            <div class="total-box">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>₹ <span id="subTotal">0.00</span></span>
+                </div>
+                <div class="total-row" style="align-items: center;">
+                    <span>GST Rate:</span>
+                    <select id="taxRate" style="width: 80px; padding: 4px;" onchange="calcTotals()">
+                        <option value="0">0%</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18" selected>18%</option>
+                        <option value="28">28%</option>
+                    </select>
+                </div>
+                <div class="total-row">
+                    <span>Total Tax:</span>
+                    <span style="color: #dc2626;">+ ₹ <span id="taxAmount">0.00</span></span>
+                </div>
+                <div class="total-row final-total">
+                    <span>Grand Total:</span>
+                    <span>₹ <span id="grandTotal">0.00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-generate" id="saveBtn">Save & Download Invoice</button>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">Invoice History</h3>
+        <input type="text" id="searchHistory" placeholder="Search Client..." style="width:100%; margin-bottom:15px; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice #</th>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
+        authDomain: "krystal-stock-3ef74.firebaseapp.com",
+        projectId: "krystal-stock-3ef74",
+        storageBucket: "krystal-stock-3ef74.firebasestorage.app",
+        messagingSenderId: "413901545424",
+        appId: "1:413901545424:web:6450cece775245a52a23d5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const invCol = collection(db, "invoices");
+
+    // Initialize Date & Random Invoice Number
+    document.getElementById('invDate').valueAsDate = new Date();
+    document.getElementById('invNumber').value = "INV-" + Math.floor(1000 + Math.random() * 9000);
+
+    // --- 1. UI LOGIC (ROWS & CALCS) ---
+    window.addItemRow = function() {
+        const tbody = document.getElementById('itemsBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" placeholder="Item Name" class="desc"></td>
+            <td><input type="text" value="9988" class="hsn"></td>
+            <td><input type="number" value="1" class="qty" oninput="window.calcRow(this)"></td>
+            <td><input type="number" value="0" class="rate" oninput="window.calcRow(this)"></td>
+            <td><input type="text" value="0.00" class="amount" readonly></td>
+            <td><button class="btn btn-remove" onclick="window.removeRow(this)">×</button></td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    window.removeRow = function(btn) {
+        btn.closest('tr').remove();
+        window.calcTotals();
+    }
+
+    window.calcRow = function(input) {
+        const row = input.closest('tr');
+        const qty = parseFloat(row.querySelector('.qty').value) || 0;
+        const rate = parseFloat(row.querySelector('.rate').value) || 0;
+        row.querySelector('.amount').value = (qty * rate).toFixed(2);
+        window.calcTotals();
+    }
+
+    window.calcTotals = function() {
+        let sub = 0;
+        document.querySelectorAll('.amount').forEach(i => sub += parseFloat(i.value) || 0);
+        
+        const rate = parseFloat(document.getElementById('taxRate').value) || 0;
+        const tax = sub * (rate / 100);
+        
+        document.getElementById('subTotal').innerText = sub.toFixed(2);
+        document.getElementById('taxAmount').innerText = tax.toFixed(2);
+        document.getElementById('grandTotal').innerText = (sub + tax).toFixed(2);
+    }
+
+    window.addItemRow(); // Start with 1 row
+
+    // --- 2. SAVE & GENERATE LOGIC ---
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        // Gather Data
+        const items = [];
+        document.querySelectorAll('#itemsBody tr').forEach(row => {
+            items.push({
+                desc: row.querySelector('.desc').value,
+                hsn: row.querySelector('.hsn').value,
+                qty: row.querySelector('.qty').value,
+                rate: row.querySelector('.rate').value,
+                amount: row.querySelector('.amount').value
+            });
+        });
+
+        const invoiceData = {
+            invNo: document.getElementById('invNumber').value,
+            date: document.getElementById('invDate').value,
+            client: document.getElementById('clientName').value,
+            contact: document.getElementById('clientContact').value,
+            subTotal: document.getElementById('subTotal').innerText,
+            taxRate: document.getElementById('taxRate').value,
+            taxAmount: document.getElementById('taxAmount').innerText,
+            grandTotal: document.getElementById('grandTotal').innerText,
+            items: items,
+            timestamp: Timestamp.now()
+        };
+
+        if(!invoiceData.client) { alert("Please enter Client Name"); return; }
+
+        try {
+            // Save to Firebase
+            await addDoc(invCol, invoiceData);
+            
+            // Generate PDF
+            window.generatePDF(invoiceData);
+            
+            // Reset Form
+            alert("Invoice Saved & Downloaded!");
+            location.reload(); 
+        } catch (error) {
+            console.error(error);
+            alert("Error saving invoice");
+        }
+    });
+
+    // --- 3. PDF GENERATOR (Reusable) ---
+    window.generatePDF = function(data) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const img = document.getElementById('invoiceLogo');
+
+        // Logo
+        if(img.naturalWidth > 0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 14, 10, 30, 20);
+        }
+
+        // Header
+        doc.setFontSize(22); doc.setTextColor(185, 28, 28);
+        doc.text("TAX INVOICE", 195, 20, { align: 'right' });
+        
+        doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+        doc.text("Krystal Gifts", 195, 28, { align: 'right' });
+        doc.text("Mumbai, Maharashtra", 195, 33, { align: 'right' });
+        doc.text("GSTIN: 27ABCDE1234F1Z5", 195, 38, { align: 'right' });
+
+        // Bill To
+        doc.setFontSize(12); doc.text("Bill To:", 14, 45);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text(data.client, 14, 52);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.contact, 14, 57);
+
+        // Details
+        doc.text(`Invoice #: ${data.invNo}`, 195, 52, { align: 'right' });
+        doc.text(`Date: ${data.date}`, 195, 57, { align: 'right' });
+
+        // Table Body
+        const tableBody = data.items.map(i => [i.desc, i.hsn, i.qty, i.rate, i.amount]);
+
+        doc.autoTable({
+            startY: 65,
+            head: [['Description', 'HSN', 'Qty', 'Rate', 'Amount']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [185, 28, 28] },
+            columnStyles: { 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+        });
+
+        // Footer Totals
+        let finalY = doc.lastAutoTable.finalY + 10;
+        
+        doc.setFontSize(10);
+        doc.text(`Subtotal:`, 140, finalY);
+        doc.text(`${data.subTotal}`, 195, finalY, { align: 'right' });
+
+        const halfTax = (parseFloat(data.taxAmount) / 2).toFixed(2);
+        const halfRate = parseFloat(data.taxRate) / 2;
+
+        finalY += 6;
+        doc.text(`CGST (${halfRate}%):`, 140, finalY);
+        doc.text(`${halfTax}`, 195, finalY, { align: 'right' });
+
+        finalY += 6;
+        doc.text(`SGST (${halfRate}%):`, 140, finalY);
+        doc.text(`${halfTax}`, 195, finalY, { align: 'right' });
+
+        finalY += 10;
+        doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(185, 28, 28);
+        doc.text(`Total: ${data.grandTotal}`, 195, finalY, { align: 'right' });
+
+        doc.save(`${data.client}_Invoice.pdf`);
+    }
+
+    // --- 4. HISTORY LOADER ---
+    let allInvoices = [];
+    const q = query(invCol, orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        allInvoices = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        renderHistory(allInvoices);
+    });
+
+    function renderHistory(data) {
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '';
+        data.forEach(inv => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${inv.date}</td>
+                <td>${inv.invNo}</td>
+                <td><strong>${inv.client}</strong></td>
+                <td>₹${inv.grandTotal}</td>
+                <td><button class="btn-download">Download PDF</button></td>
+            `;
+            // Attach Click Event for Re-download
+            row.querySelector('.btn-download').addEventListener('click', () => window.generatePDF(inv));
+            tbody.appendChild(row);
+        });
+    }
+
+    // Search History
+    document.getElementById('searchHistory').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allInvoices.filter(i => i.client.toLowerCase().includes(term));
+        renderHistory(filtered);
+    });
+
+</script>
+
+</body>
+</html>
