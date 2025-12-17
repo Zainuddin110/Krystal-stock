@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Krystal Payment Ledger</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #0f766e; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
+        
+        .container { max-width: 1000px; margin: 20px auto; padding: 15px; }
+        
+        /* Header */
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header img { height: 40px; }
+        .header h1 { color: var(--primary); margin: 0; font-size: 1.5rem; }
+        .home-link { text-decoration: none; color: #555; font-weight: 600; padding: 8px 15px; border: 1px solid #ddd; border-radius: 6px; background: white; }
+
+        /* Cards */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .section-title { font-weight: bold; color: #4b5563; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Forms */
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
+        input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* Buttons */
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-pay { background: #16a34a; color: white; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; margin-bottom: 5px; }
+        .btn-pdf { background: #dc2626; color: white; padding: 6px 12px; font-size: 0.85rem; border-radius: 4px; }
+
+        /* Ledger Table */
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .ledger-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .ledger-table th { text-align: left; background: #f9fafb; padding: 12px; font-size: 0.85rem; color: #6b7280; }
+        .ledger-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+        
+        /* Status Badges */
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .status-open { background: #fee2e2; color: #991b1b; } /* Red for Pending */
+        .status-closed { background: #d1fae5; color: #065f46; } /* Green for Paid */
+
+        /* Money Colors */
+        .money-total { font-weight: bold; color: #1f2937; }
+        .money-paid { color: #059669; font-weight: bold; }
+        .money-pending { color: #dc2626; font-weight: bold; }
+
+        /* Payment Modal (Hidden Area) */
+        .payment-area { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #bbf7d0; display: none; }
+        .history-list { font-size: 0.85rem; color: #555; margin-top: 5px; max-height: 100px; overflow-y: auto; }
+        .history-item { border-bottom: 1px solid #ddd; padding: 4px 0; display: flex; justify-content: space-between; }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; margin: 0 auto; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .home-link { width: 100%; text-align: center; box-sizing: border-box; }
+            .grid-3 { grid-template-columns: 1fr; gap: 10px; }
+            .btn-primary { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <img src="logo.png" id="pageLogo" alt="Logo">
+            <h1>Payment Ledger</h1>
+        </div>
+        <a href="index.html" class="home-link">Back to Stock</a>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">➕ Start New Tracking</h3>
+        <div class="grid-3">
+            <div>
+                <label>Client Name</label>
+                <input type="text" id="newClient" placeholder="e.g. Audi">
+            </div>
+            <div>
+                <label>Order Description</label>
+                <input type="text" id="newDesc" placeholder="e.g. 500 Cubes Order">
+            </div>
+            <div>
+                <label>Total Order Value (₹)</label>
+                <input type="number" id="newTotal" placeholder="100000" inputmode="numeric">
+            </div>
+        </div>
+        <button class="btn btn-primary" id="btnCreate">Create Account</button>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">
+            <span>🔴 Active / Pending Accounts</span>
+            <input type="text" id="searchBox" placeholder="Search..." style="width: 150px; font-size: 0.9rem; padding: 8px; border:1px solid #ddd; border-radius:6px;">
+        </h3>
+        
+        <div class="table-wrapper">
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th style="width:25%">Client & Order</th>
+                        <th style="width:15%">Total Value</th>
+                        <th style="width:15%">Received</th>
+                        <th style="width:15%">Pending</th>
+                        <th style="width:30%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="activeBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="opacity: 0.9;">
+        <h3 class="section-title" style="color: #059669;">
+            <span>🟢 Settled / History (Fully Paid)</span>
+        </h3>
+        
+        <div class="table-wrapper">
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th style="width:25%">Client & Order</th>
+                        <th style="width:15%">Total Value</th>
+                        <th style="width:15%">Received</th>
+                        <th style="width:15%">Status</th>
+                        <th style="width:30%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="settledBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, Timestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
+        authDomain: "krystal-stock-3ef74.firebaseapp.com",
+        projectId: "krystal-stock-3ef74",
+        storageBucket: "krystal-stock-3ef74.firebasestorage.app",
+        messagingSenderId: "413901545424",
+        appId: "1:413901545424:web:6450cece775245a52a23d5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const ledgerCol = collection(db, "payment_ledgers");
+
+    // --- 1. CREATE NEW DEAL ---
+    document.getElementById('btnCreate').addEventListener('click', async () => {
+        const client = document.getElementById('newClient').value;
+        const desc = document.getElementById('newDesc').value;
+        const total = Number(document.getElementById('newTotal').value);
+
+        if(!client || !total) { alert("Enter Client and Amount"); return; }
+
+        try {
+            await addDoc(ledgerCol, {
+                client: client,
+                description: desc,
+                totalAmount: total,
+                receivedAmount: 0,
+                pendingAmount: total,
+                status: "OPEN",
+                transactions: [], 
+                timestamp: Timestamp.now()
+            });
+            alert("New Account Created!");
+            document.getElementById('newClient').value = "";
+            document.getElementById('newDesc').value = "";
+            document.getElementById('newTotal').value = "";
+        } catch (e) {
+            console.error(e);
+            alert("Error creating account");
+        }
+    });
+
+    // --- 2. LOAD & SPLIT DATA ---
+    const q = query(ledgerCol, orderBy("timestamp", "desc"));
+    let allDeals = [];
+
+    onSnapshot(q, (snapshot) => {
+        allDeals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        renderAll(allDeals);
+    });
+
+    function renderAll(data) {
+        const activeBody = document.getElementById('activeBody');
+        const settledBody = document.getElementById('settledBody');
+        
+        activeBody.innerHTML = '';
+        settledBody.innerHTML = '';
+
+        let hasActive = false;
+        let hasSettled = false;
+
+        data.forEach(deal => {
+            const isSettled = deal.pendingAmount <= 0;
+            const targetBody = isSettled ? settledBody : activeBody;
+            
+            if(isSettled) hasSettled = true; else hasActive = true;
+
+            const row = document.createElement('tr');
+            
+            // Layout for Row
+            row.innerHTML = `
+                <td>
+                    <strong>${deal.client}</strong><br>
+                    <span style="font-size:0.8rem; color:#666;">${deal.description}</span>
+                </td>
+                <td class="money-total">₹${deal.totalAmount.toLocaleString()}</td>
+                <td class="money-paid">₹${deal.receivedAmount.toLocaleString()}</td>
+                ${isSettled 
+                    ? `<td><span class="status-badge status-closed">PAID</span></td>`
+                    : `<td class="money-pending">₹${deal.pendingAmount.toLocaleString()}</td>`
+                }
+                <td>
+                    ${!isSettled ? `<button class="btn btn-pay" onclick="window.togglePay('${deal.id}')">➕ Pay</button>` : ''}
+                    <button class="btn btn-pdf" onclick="window.generateStatement('${deal.id}')">📄 PDF</button>
+                    
+                    ${!isSettled ? `
+                    <div id="pay-area-${deal.id}" class="payment-area">
+                        <div style="display:flex; gap:5px; margin-bottom:5px;">
+                            <input type="number" id="amt-${deal.id}" placeholder="Amount" style="width:100px;">
+                            <input type="date" id="date-${deal.id}" style="width:130px;">
+                        </div>
+                        <input type="text" id="note-${deal.id}" placeholder="Note (e.g. UPI)" style="margin-bottom:5px;">
+                        <button class="btn btn-primary" style="padding:6px; font-size:0.8rem;" onclick="window.savePayment('${deal.id}')">Save Payment</button>
+                    </div>` : ''}
+                </td>
+            `;
+            targetBody.appendChild(row);
+        });
+
+        if(!hasActive) activeBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">No pending accounts.</td></tr>';
+        if(!hasSettled) settledBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">No settled accounts yet.</td></tr>';
+    }
+
+    // --- 3. UI FUNCTIONS ---
+    window.togglePay = function(id) {
+        const area = document.getElementById(`pay-area-${id}`);
+        document.getElementById(`date-${id}`).valueAsDate = new Date();
+        area.style.display = area.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // --- 4. SAVE PAYMENT LOGIC ---
+    window.savePayment = async function(id) {
+        const amount = Number(document.getElementById(`amt-${id}`).value);
+        const date = document.getElementById(`date-${id}`).value;
+        const note = document.getElementById(`note-${id}`).value || "Payment";
+        
+        if(!amount || !date) { alert("Enter Amount and Date"); return; }
+
+        const deal = allDeals.find(d => d.id === id);
+        const newReceived = deal.receivedAmount + amount;
+        const newPending = deal.totalAmount - newReceived;
+        const newStatus = newPending <= 0 ? "CLOSED" : "OPEN";
+
+        const newTransaction = {
+            amount: amount,
+            date: date,
+            note: note,
+            timestamp: Date.now()
+        };
+
+        try {
+            await updateDoc(doc(db, "payment_ledgers", id), {
+                receivedAmount: newReceived,
+                pendingAmount: newPending,
+                status: newStatus,
+                transactions: arrayUnion(newTransaction)
+            });
+            alert("Payment Recorded!");
+        } catch (e) {
+            console.error(e);
+            alert("Error saving payment");
+        }
+    }
+
+    // --- 5. SEARCH ---
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allDeals.filter(d => d.client.toLowerCase().includes(term));
+        renderAll(filtered);
+    });
+
+    // --- 6. GENERATE STATEMENT PDF ---
+    window.generateStatement = function(id) {
+        const deal = allDeals.find(d => d.id === id);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const img = document.getElementById('pageLogo');
+        if(img.naturalWidth > 0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 14, 10, 30, 20);
+        }
+
+        doc.setFontSize(22); doc.setTextColor(15, 118, 110);
+        doc.text("STATEMENT OF ACCOUNT", 195, 20, { align: 'right' });
+        
+        doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text("Krystal Gifts", 195, 28, { align: 'right' });
+        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 195, 33, { align: 'right' });
+
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text(`Client: ${deal.client}`, 14, 45);
+        doc.setFontSize(11); doc.setFont("helvetica", "normal");
+        doc.text(`Project: ${deal.description}`, 14, 52);
+
+        doc.setDrawColor(200); doc.setFillColor(245, 245, 245);
+        doc.rect(14, 60, 180, 25, 'FD');
+        
+        doc.setFont("helvetica", "bold");
+        doc.text("Total Project Value", 20, 70);
+        doc.text(`Rs. ${deal.totalAmount.toLocaleString()}`, 20, 78);
+        
+        doc.text("Total Received", 90, 70);
+        doc.setTextColor(5, 150, 105); 
+        doc.text(`Rs. ${deal.receivedAmount.toLocaleString()}`, 90, 78);
+        
+        doc.setTextColor(0,0,0);
+        doc.text("Balance Pending", 150, 70);
+        if(deal.pendingAmount > 0) doc.setTextColor(220, 38, 38); else doc.setTextColor(5, 150, 105);
+        doc.text(`Rs. ${deal.pendingAmount.toLocaleString()}`, 150, 78);
+
+        const tableBody = deal.transactions.map(t => [t.date, t.note, t.amount.toLocaleString()]);
+        
+        doc.setTextColor(0,0,0);
+        doc.autoTable({
+            startY: 95,
+            head: [['Date', 'Payment Details / Note', 'Amount (Rs)']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [15, 118, 110] },
+            columnStyles: { 2: { halign: 'right', fontStyle: 'bold' } }
+        });
+
+        doc.save(`${deal.client}_Statement.pdf`);
+    }
+
+</script>
+
+</body>
+</html>
