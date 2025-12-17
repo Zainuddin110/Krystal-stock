@@ -9,7 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-        <a href="bill.html" class="btn-invoice" target="_blank">Go to Billing</a>
+    <a href="bill.html" class="btn-tool btn-ledger" target="_blank">🧾 Go to Billing</a>
+    <a href="ledger.html" class="btn-tool btn-ledger" target="_blank">📒 Go to Ledger</a>
 
     <style>
         :root { --primary: #b91c1c; --bg: #f3f4f6; --text: #1f2937; }
@@ -19,7 +20,7 @@
         .container { max-width: 1000px; margin: 20px auto; padding: 15px; }
         
         /* Login Overlay */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #9ca3af; display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
         .login-box { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .login-box img { height: 60px; margin-bottom: 20px; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
@@ -38,8 +39,8 @@
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h3 { margin-top: 0; color: #4b5563; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px; font-size: 1.1rem; }
 
-        /* Form Layout (Updated for 5 columns) */
-        .form-row { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1.5fr auto; gap: 10px; align-items: end; }
+        /* Form Layout (Updated for 4 columns) */
+        .form-row { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr auto; gap: 10px; align-items: end; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; }
         input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
@@ -80,9 +81,8 @@
         .action-updated { color: #d97706; }
         .action-deleted { color: #dc2626; }
 
-        .btn-invoice {
-            background: #2563eb; /* Blue color */
-            color: white;
+        /* Tool Buttons Group */
+        .btn-tool {
             text-decoration: none;
             padding: 8px 15px;
             border-radius: 6px;
@@ -90,13 +90,16 @@
             font-weight: 600;
             margin-right: 10px;
             display: inline-block;
+            color: white;
+            transition: background 0.2s;
         }
-        .btn-invoice:hover {
-            background: #1d4ed8;
+        .btn-ledger {
+            background: #930303; /* Green for Ledger */
         }
+        .btn-ledger:hover { background: #047857; }
 
         /* --- MOBILE RESPONSIVENESS --- */
-        @media (max-width: 850px) {
+        @media (max-width: 768px) {
             .container { padding: 10px; margin: 0 auto; }
             .header { flex-direction: column; align-items: flex-start; gap: 15px; }
             .header-right { width: 100%; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6; padding-top: 10px; }
@@ -152,10 +155,6 @@
                         <input type="number" id="itemQty" placeholder="0" required inputmode="numeric">
                     </div>
                     <div>
-                        <label>Reason / Client (For Logs)</label>
-                        <input type="text" id="logReason" placeholder="e.g. Used for Audi">
-                    </div>
-                    <div>
                         <button type="submit" id="submitBtn" class="btn-primary">Add Stock</button>
                         <button type="button" id="cancelBtn" class="btn-cancel">Cancel</button>
                     </div>
@@ -201,7 +200,7 @@
                             <th>User</th>
                             <th>Action</th>
                             <th>Item</th>
-                            <th>Change Details</th>
+                            <th>Details</th>
                         </tr>
                     </thead>
                     <tbody id="logTable">
@@ -218,13 +217,13 @@
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
-    	apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
-    	authDomain: "krystal-stock-3ef74.firebaseapp.com",
-    	projectId: "krystal-stock-3ef74",
-    	storageBucket: "krystal-stock-3ef74.firebasestorage.app",
-    	messagingSenderId: "413901545424",
-    	appId: "1:413901545424:web:6450cece775245a52a23d5"
-  	};
+        apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
+        authDomain: "krystal-stock-3ef74.firebaseapp.com",
+        projectId: "krystal-stock-3ef74",
+        storageBucket: "krystal-stock-3ef74.firebasestorage.app",
+        messagingSenderId: "413901545424",
+        appId: "1:413901545424:web:6450cece775245a52a23d5"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -282,42 +281,35 @@
     // --- STOCK MANAGEMENT ---
     let isEditing = false;
     let editId = null;
-    let originalQty = 0; // Tracks qty before edit
     let allStock = [];
 
     document.getElementById('stockForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('itemName').value;
-        const location = document.getElementById('itemLocation').value; 
-        const newQty = Number(document.getElementById('itemQty').value);
-        const reason = document.getElementById('logReason').value || "No reason given";
+        const location = document.getElementById('itemLocation').value; // Get Location
+        const qty = Number(document.getElementById('itemQty').value);
 
         try {
             if (isEditing) {
-                // UPDATE LOGIC
+                // Update
                 await updateDoc(doc(db, "stock_inventory", editId), {
                     name: name,
                     location: location,
-                    quantity: newQty,
+                    quantity: qty,
                     updatedAt: Timestamp.now()
                 });
-
-                // Detailed Log Message
-                const changeMsg = `Qty: ${originalQty} → ${newQty}. Ref: ${reason}`;
-                await logAction("UPDATED", name, changeMsg);
-                
+                await logAction("UPDATED", name, `Loc: ${location}, Qty: ${qty}`);
                 alert("Stock Updated");
                 resetForm();
             } else {
-                // CREATE LOGIC
+                // Create
                 await addDoc(stockCol, {
                     name: name,
                     location: location,
-                    quantity: newQty,
+                    quantity: qty,
                     updatedAt: Timestamp.now()
                 });
-
-                await logAction("CREATED", name, `Initial Qty: ${newQty}. Ref: ${reason}`);
+                await logAction("CREATED", name, `Loc: ${location}, Qty: ${qty}`);
                 alert("Stock Added");
                 e.target.reset();
             }
@@ -349,7 +341,7 @@
         tbody.innerHTML = '';
         data.forEach(item => {
             const badgeClass = item.quantity < 10 ? 'low-stock' : 'good-stock';
-            const locText = item.location ? item.location : '-'; 
+            const locText = item.location ? item.location : '-'; // Handle empty location
             
             const row = `
                 <tr>
@@ -401,13 +393,9 @@
 
         isEditing = true;
         editId = id;
-        originalQty = item.quantity; // SAVE OLD QUANTITY
-
         document.getElementById('itemName').value = item.name;
-        document.getElementById('itemLocation').value = item.location || ""; 
+        document.getElementById('itemLocation').value = item.location || ""; // Populate Location
         document.getElementById('itemQty').value = item.quantity;
-        document.getElementById('logReason').value = ""; // Clear reason so they must type new one
-        document.getElementById('logReason').placeholder = "Enter Client / Reason for this change";
         
         const btn = document.getElementById('submitBtn');
         btn.innerText = "Update Stock";
@@ -433,9 +421,7 @@
     function resetForm() {
         isEditing = false;
         editId = null;
-        originalQty = 0;
         document.getElementById('stockForm').reset();
-        document.getElementById('logReason').placeholder = "e.g. Used for Audi";
         
         const btn = document.getElementById('submitBtn');
         btn.innerText = "Add Stock";
@@ -449,6 +435,7 @@
 
     document.getElementById('searchStock').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
+        // Filter by Name OR Location
         const filtered = allStock.filter(item => 
             item.name.toLowerCase().includes(term) || 
             (item.location && item.location.toLowerCase().includes(term))
@@ -466,7 +453,7 @@
         return `${day}-${month}-${year}-krystal-stock`;
     }
 
-    // Download Excel
+    // Download Excel (Including Location)
     window.downloadExcel = () => {
         if(allStock.length === 0) { alert("No stock data to export."); return; }
 
@@ -488,7 +475,7 @@
         document.body.removeChild(link);
     };
 
-    // Download PDF
+    // Download PDF (Including Location)
     window.downloadPDF = () => {
         if(allStock.length === 0) { alert("No stock data to export."); return; }
 
@@ -533,4 +520,3 @@
 
 </body>
 </html>
-
