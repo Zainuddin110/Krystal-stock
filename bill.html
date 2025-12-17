@@ -9,6 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
+    <a href="index.html" class="btn-tool btn-ledger" target="_blank">🧾 Go to Stock</a>
+    <a href="ledger.html" class="btn-tool btn-ledger" target="_blank">📒 Go to Ledger</a>
+
+
     <style>
         :root { --primary: #b91c1c; --bg: #f3f4f6; --text: #1f2937; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
@@ -50,6 +54,22 @@
 
         .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
         .checkbox-wrapper input { width: auto; }
+
+        .btn-tool {
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-right: 10px;
+            display: inline-block;
+            color: white;
+            transition: background 0.2s;
+        }
+        .btn-ledger {
+            background: #930303; /* Green for Ledger */
+        }
+        .btn-ledger:hover { background: #047857; }
 
         @media (max-width: 600px) {
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
