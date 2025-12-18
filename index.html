@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Krystal Stock Portal</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #b91c1c; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
+        
+        /* Container */
+        .container { max-width: 1000px; margin: 20px auto; padding: 15px; }
+        
+        /* Login Overlay */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #9ca3af; display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .login-box { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box img { height: 60px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        /* Main App */
+        #app-screen { display: none; } 
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header h1 { color: var(--primary); margin: 0; font-size: 1.4rem; }
+        
+        /* Header Right Side (Buttons) */
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .user-info { font-size: 0.85rem; color: #555; font-weight: 500;}
+        .btn-logout { background: #4b5563; padding: 8px 12px; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+
+        /* Tool Buttons Group */
+        .btn-tool {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-invoice { background: #2563eb; }
+        .btn-invoice:hover { background: #1d4ed8; }
+        .btn-ledger { background: #059669; }
+        .btn-ledger:hover { background: #047857; }
+
+        /* Cards */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #4b5563; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px; font-size: 1.1rem; }
+
+        /* Form Layout (Standard PC: 5 Columns) */
+        .form-row { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1.5fr auto; gap: 10px; align-items: end; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; }
+        input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        /* Buttons */
+        button { cursor: pointer; padding: 12px 20px; border-radius: 8px; border: none; font-weight: 600; font-size: 1rem; color: white; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); width: 100%; }
+        .btn-update { background: #f59e0b; width: 100%; }
+        .btn-cancel { background: #9ca3af; display: none; margin-top: 10px; width: 100%; }
+        
+        /* Export Buttons */
+        .export-group { display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end; }
+        .btn-pdf { background: #dc2626; color: white; padding: 8px 15px; font-size: 0.9rem; }
+        .btn-excel { background: #16a34a; color: white; padding: 8px 15px; font-size: 0.9rem; }
+
+        /* Responsive Tables */
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; }
+        th { background: #f9fafb; color: #6b7280; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+        
+        /* Actions */
+        .action-group { display: flex; gap: 5px; }
+        .action-btn { padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: none; }
+        .btn-edit { background: #e0e7ff; color: #3730a3; }
+        .btn-del { background: #fee2e2; color: #991b1b; }
+
+        /* Badges */
+        .qty-badge { font-weight: bold; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem;}
+        .low-stock { background: #fee2e2; color: #b91c1c; }
+        .good-stock { background: #d1fae5; color: #065f46; }
+
+        /* Log Table Specifics */
+        .log-time { color: #6b7280; font-size: 0.8rem; white-space: nowrap; }
+        .log-action { font-weight: 600; font-size: 0.8rem; }
+        .log-user { color: #2563eb; font-size: 0.8rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .action-created { color: #059669; }
+        .action-updated { color: #d97706; }
+        .action-deleted { color: #dc2626; }
+
+
+        /* --- MOBILE RESPONSIVENESS FIXES --- */
+        @media (max-width: 800px) {
+            .container { padding: 10px; margin: 0 auto; }
+            
+            /* Stack Header items cleanly */
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            
+            /* Wrap buttons if screen is too narrow */
+            .header-right { width: 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px; border-top: 1px solid #f3f4f6; padding-top: 10px; }
+            
+            /* Stack Form Inputs vertically */
+            .form-row { grid-template-columns: 1fr; gap: 15px; } 
+            
+            /* Full width buttons */
+            .btn-primary, .btn-update { width: 100%; }
+            .export-group { justify-content: stretch; }
+            .btn-pdf, .btn-excel { flex: 1; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-box">
+        <img src="logo.png" alt="Krystal Logo">
+        <h2 style="margin-top:0;">Stock Admin</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="admin@krystal.com" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+        <p id="loginError" style="color:red; font-size:0.9rem; display:none; margin-top: 10px;"></p>
+    </div>
+</div>
+
+<div id="app-screen">
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <img src="logo.png" style="height:40px;" id="pageLogo">
+                <h1>Stock Portal</h1>
+            </div>
+            
+            <div class="header-right">
+                <a href="bill.html" class="btn-tool btn-invoice" target="_blank">🧾 Billing</a>
+                <a href="ledger.html" class="btn-tool btn-ledger" target="_blank">📒 Ledger</a>
+                
+                <span id="displayUser" class="user-info"></span>
+                <button id="btnLogout" class="btn-logout">Logout</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 id="formTitle">Add New Stock</h3>
+            <form id="stockForm">
+                <div class="form-row">
+                    <div>
+                        <label>Item Name</label>
+                        <input type="text" id="itemName" placeholder="e.g. 50mm Cube" required>
+                    </div>
+                    <div>
+                        <label>Location</label>
+                        <input type="text" id="itemLocation" placeholder="e.g. Shelf A">
+                    </div>
+                    <div>
+                        <label>Quantity</label>
+                        <input type="number" id="itemQty" placeholder="0" required inputmode="numeric">
+                    </div>
+                    <div>
+                        <label>Reason / Client</label>
+                        <input type="text" id="logReason" placeholder="e.g. Used for Audi">
+                    </div>
+                    <div>
+                        <button type="submit" id="submitBtn" class="btn-primary">Add Stock</button>
+                        <button type="button" id="cancelBtn" class="btn-cancel">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <h3>Current Inventory</h3>
+            </div>
+            
+            <input type="text" id="searchStock" placeholder="Search stock or location..." style="margin-bottom:15px;">
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Location</th>
+                            <th>Qty</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTable">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="export-group">
+                <button class="btn-excel" onclick="downloadExcel()">Download Excel</button>
+                <button class="btn-pdf" onclick="downloadPDF()">Download PDF</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📋 Activity Log</h3>
+            <div style="max-height: 300px; overflow-y: auto;" class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Item</th>
+                            <th>Change Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // -----------------------------------------------------------
+    // PASTE YOUR FIREBASE CONFIG HERE
+    // -----------------------------------------------------------
+    const firebaseConfig = {
+        apiKey: "AIzaSyDAk5j4xu-ijD_qU2cBFVlz5_E1GTyhSEc",
+        authDomain: "krystal-stock-3ef74.firebaseapp.com",
+        projectId: "krystal-stock-3ef74",
+        storageBucket: "krystal-stock-3ef74.firebasestorage.app",
+        messagingSenderId: "413901545424",
+        appId: "1:413901545424:web:6450cece775245a52a23d5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const stockCol = collection(db, "stock_inventory");
+    const logsCol = collection(db, "stock_logs");
+
+    let currentUserEmail = "";
+
+    // --- AUTHENTICATION ---
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUserEmail = user.email;
+            document.getElementById('displayUser').innerText = currentUserEmail;
+            loginScreen.style.display = 'none';
+            appScreen.style.display = 'block';
+            loadStockData();
+            loadLogs(); 
+        } else {
+            loginScreen.style.display = 'flex';
+            appScreen.style.display = 'none';
+        }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+            document.getElementById('loginError').innerText = "Invalid credentials";
+            document.getElementById('loginError').style.display = 'block';
+        });
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
+
+    // --- HELPER: LOGGING SYSTEM ---
+    async function logAction(action, itemName, details) {
+        try {
+            await addDoc(logsCol, {
+                action: action,
+                item: itemName,
+                details: details,
+                user: currentUserEmail,
+                timestamp: Timestamp.now()
+            });
+        } catch (e) {
+            console.error("Failed to log action:", e);
+        }
+    }
+
+    // --- STOCK MANAGEMENT ---
+    let isEditing = false;
+    let editId = null;
+    let originalQty = 0;
+    let allStock = [];
+
+    document.getElementById('stockForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('itemName').value;
+        const location = document.getElementById('itemLocation').value; 
+        const qty = Number(document.getElementById('itemQty').value);
+        const reason = document.getElementById('logReason').value || "No reason given";
+
+        try {
+            if (isEditing) {
+                // Update
+                await updateDoc(doc(db, "stock_inventory", editId), {
+                    name: name,
+                    location: location,
+                    quantity: qty,
+                    updatedAt: Timestamp.now()
+                });
+                
+                // Log with Difference Calculation
+                const diff = qty - originalQty;
+                const sign = diff >= 0 ? "+" : "";
+                const changeDetails = `Qty: ${originalQty} -> ${qty} (${sign}${diff}). Ref: ${reason}`;
+
+                await logAction("UPDATED", name, changeDetails);
+                alert("Stock Updated");
+                resetForm();
+            } else {
+                // Create
+                await addDoc(stockCol, {
+                    name: name,
+                    location: location,
+                    quantity: qty,
+                    updatedAt: Timestamp.now()
+                });
+                await logAction("CREATED", name, `Initial Qty: ${qty}. Ref: ${reason}`);
+                alert("Stock Added");
+                e.target.reset();
+            }
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    });
+
+    // --- REAL-TIME DATA ---
+    function loadStockData() {
+        const q = query(stockCol, orderBy("name", "asc"));
+        onSnapshot(q, (snapshot) => {
+            allStock = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            renderTable(allStock);
+        });
+    }
+
+    function loadLogs() {
+        const q = query(logsCol, orderBy("timestamp", "desc"), limit(50));
+        onSnapshot(q, (snapshot) => {
+            const logs = snapshot.docs.map(doc => doc.data());
+            renderLogs(logs);
+        });
+    }
+
+    // --- RENDERING ---
+    function renderTable(data) {
+        const tbody = document.getElementById('stockTable');
+        tbody.innerHTML = '';
+        data.forEach(item => {
+            const badgeClass = item.quantity < 10 ? 'low-stock' : 'good-stock';
+            const locText = item.location ? item.location : '-'; 
+            
+            const row = `
+                <tr>
+                    <td><strong>${item.name}</strong></td>
+                    <td>${locText}</td>
+                    <td><span class="qty-badge ${badgeClass}">${item.quantity}</span></td>
+                    <td>
+                        <div class="action-group">
+                            <button class="action-btn btn-edit" onclick="editStock('${item.id}')">Edit</button>
+                            <button class="action-btn btn-del" onclick="deleteStock('${item.id}', '${item.name}')">🗑</button>
+                        </div>
+                    </td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function renderLogs(logs) {
+        const tbody = document.getElementById('logTable');
+        tbody.innerHTML = '';
+        logs.forEach(log => {
+            let timeStr = "";
+            if (log.timestamp) {
+                const date = log.timestamp.toDate();
+                timeStr = date.toLocaleDateString() + " " + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+
+            let actionClass = "";
+            if(log.action === "CREATED") actionClass = "action-created";
+            if(log.action === "UPDATED") actionClass = "action-updated";
+            if(log.action === "DELETED") actionClass = "action-deleted";
+
+            const row = `
+                <tr>
+                    <td class="log-time">${timeStr}</td>
+                    <td class="log-user">${log.user}</td>
+                    <td class="log-action ${actionClass}">${log.action}</td>
+                    <td>${log.item}</td>
+                    <td>${log.details}</td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // --- GLOBAL ACTIONS ---
+    window.editStock = (id) => {
+        const item = allStock.find(i => i.id === id);
+        if(!item) return;
+
+        isEditing = true;
+        editId = id;
+        originalQty = item.quantity; // Store Original for Log calculation
+
+        document.getElementById('itemName').value = item.name;
+        document.getElementById('itemLocation').value = item.location || ""; 
+        document.getElementById('itemQty').value = item.quantity;
+        
+        // Setup Reason Field
+        const reasonInput = document.getElementById('logReason');
+        reasonInput.value = ""; 
+        reasonInput.placeholder = "Enter Client / Reason for Change";
+        reasonInput.focus();
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerText = "Update Stock";
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-update');
+        
+        document.getElementById('cancelBtn').style.display = 'block';
+        document.getElementById('formTitle').innerText = "Edit Item";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteStock = async (id, name) => {
+        if(confirm(`Delete "${name}" permanently?`)) {
+            try {
+                await deleteDoc(doc(db, "stock_inventory", id));
+                await logAction("DELETED", name, "Item removed");
+            } catch(e) {
+                alert("Error deleting: " + e.message);
+            }
+        }
+    };
+
+    function resetForm() {
+        isEditing = false;
+        editId = null;
+        originalQty = 0;
+        document.getElementById('stockForm').reset();
+        document.getElementById('logReason').placeholder = "e.g. Used for Audi";
+        
+        const btn = document.getElementById('submitBtn');
+        btn.innerText = "Add Stock";
+        btn.classList.remove('btn-update');
+        btn.classList.add('btn-primary');
+        
+        document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('formTitle').innerText = "Add New Stock";
+    }
+    document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+    document.getElementById('searchStock').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allStock.filter(item => 
+            item.name.toLowerCase().includes(term) || 
+            (item.location && item.location.toLowerCase().includes(term))
+        );
+        renderTable(filtered);
+    });
+
+    // --- DOWNLOAD FUNCTIONS ---
+
+    function getFileName() {
+        const d = new Date();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}-krystal-stock`;
+    }
+
+    // Download Excel
+    window.downloadExcel = () => {
+        if(allStock.length === 0) { alert("No stock data to export."); return; }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Item Name,Location,Quantity\n"; 
+
+        allStock.forEach(item => {
+            const safeName = item.name.replace(/,/g, " ");
+            const safeLoc = item.location ? item.location.replace(/,/g, " ") : "-";
+            csvContent += `${safeName},${safeLoc},${item.quantity}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", getFileName() + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Download PDF
+    window.downloadPDF = () => {
+        if(allStock.length === 0) { alert("No stock data to export."); return; }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const img = document.getElementById('pageLogo');
+        if(img && img.naturalWidth > 0) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const logoData = canvas.toDataURL('image/png');
+                doc.addImage(logoData, 'PNG', 14, 10, 30, 20);
+            } catch(e) { console.log("Logo error", e); }
+        }
+
+        doc.setFontSize(18);
+        doc.setTextColor(185, 28, 28);
+        doc.text("Krystal Stock Inventory", 50, 20);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(0,0,0);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 50, 28);
+
+        const tableBody = allStock.map(item => [item.name, item.location || '-', item.quantity]);
+
+        doc.autoTable({
+            startY: 35,
+            head: [['Item Name', 'Location', 'Quantity']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [185, 28, 28] }
+        });
+
+        doc.save(getFileName() + ".pdf");
+    };
+
+</script>
+
+</body>
+</html>
